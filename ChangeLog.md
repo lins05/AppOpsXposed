@@ -1,3 +1,9 @@
+### 1.30.4 (unofficial):
+* Applied Nougat compatibility patches
+* Updated Android libraries
+* Removed debug activity
+* Removed libsuperuser
+
 ### 1.30.3:
 * Fix missing op labels/summaries
 * Fix issue in "Show changed"
