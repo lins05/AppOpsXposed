@@ -19,11 +19,9 @@
 package at.jclehner.appopsxposed.util;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -37,89 +35,78 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
+import android.text.Html;
+import android.text.Spanned;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
 import at.jclehner.appopsxposed.AppOpsActivity;
 import at.jclehner.appopsxposed.BuildConfig;
-import at.jclehner.appopsxposed.LauncherActivity;
 
 import com.android.settings.applications.AppOpsDetails;
 
 import dalvik.system.DexFile;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
-import eu.chainfire.libsuperuser.Shell.SU;
 
-public final class Util
-{
-	// keep this variable, because some versions of ART seem to inline
-	// a function that simply returns a constant.
-	private static boolean sIsExposedModuleEnabled = false;
+public final class Util {
+	@SuppressWarnings("FieldCanBeLocal")
+    private static boolean sIsXposedModuleEnabled = false;
 	public static boolean sIsBootCompletedHackWorking = false;
 
-	public interface Logger
-	{
+	public interface Logger {
 		void log(String s);
+
 		void log(Throwable t);
 	}
 
 	public static Logger logger = new Logger() {
 
 		@Override
-		public void log(Throwable t)
-		{
+		public void log(Throwable t) {
 			Log.w("AOX", t);
 		}
 
 		@Override
-		public void log(String s)
-		{
+		public void log(String s) {
 			Log.i("AOX", s);
 		}
 	};
 
-	public static int logLevel = BuildConfig.DEBUG ? 100 : 1;
+	private static int logLevel = BuildConfig.DEBUG ? 100 : 1;
 
-	public static void log(Throwable t)
-	{
-		if(logLevel >= 1)
+	public static void log(Throwable t) {
+		if (logLevel >= 1)
 			logger.log(t);
 	}
 
-	public static void log(String s)
-	{
-		if(logLevel >= 1)
+	public static void log(String s) {
+		if (logLevel >= 1)
 			logger.log(s);
 	}
 
-	public static void debug(Throwable t)
-	{
-		if(logLevel >= 2)
+	public static void debug(Throwable t) {
+		if (logLevel >= 2)
 			logger.log(t);
 	}
 
-	public static void debug(String s)
-	{
-		if(logLevel >= 2)
+	public static void debug(String s) {
+		if (logLevel >= 2)
 			logger.log(s);
 	}
 
 	public static boolean isXposedModuleEnabled() {
-		return sIsExposedModuleEnabled;
+		return sIsXposedModuleEnabled;
 	}
 
-	public static boolean isBootCompletedHackWorking() { return sIsBootCompletedHackWorking; }
+	public static boolean isBootCompletedHackWorking() {
+		return sIsBootCompletedHackWorking;
+	}
 
-	public static boolean isXposedModuleOrSystemApp(Context context)
-	{
+	public static boolean isXposedModuleOrSystemApp(Context context) {
 		return isXposedModuleEnabled() || isSystemApp(context);
 	}
 
@@ -127,67 +114,44 @@ public final class Util
 		return Build.MANUFACTURER.toLowerCase(Locale.US).contains(str.toLowerCase());
 	}
 
-	public static String getAoxVersion(Context context)
-	{
+	public static String getAoxVersion(Context context) {
 		final PackageManager pm = context.getPackageManager();
-		try
-		{
+		try {
 			return pm.getPackageInfo(context.getPackageName(), 0).versionName;
-		}
-		catch(NameNotFoundException e)
-		{
+		} catch (NameNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
-	public static String[] appendToStringArray(String[] array, String str)
-	{
-		final ArrayList<String> list = new ArrayList<String>(Arrays.asList(array));
-		list.add(str);
-
-		final String[] newArray = new String[list.size()];
-		return list.toArray(newArray);
-	}
-
-	public static String getSystemProperty(String key, String defValue)
-	{
-		try
-		{
+	public static String getSystemProperty(String key, String defValue) {
+		try {
 			final Method m = Class.forName("android.os.SystemProperties").
 					getMethod("get", String.class, String.class);
 
 			return (String) m.invoke(null, key, defValue);
-		}
-		catch(Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 			return defValue;
 		}
 	}
 
-	public static File getPreferenceFile()
-	{
-		return new File(Environment.getDataDirectory(), "data/" + Constants.MODULE_PACKAGE
-				+ "/shared_prefs/" + Constants.MODULE_PACKAGE + "_preferences.xml");
-	}
+	@SuppressWarnings("deprecation")
+    public static Spanned fromHtml(String html) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            return Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY);
+        } else {
+            return Html.fromHtml(html);
+        }
+    }
 
-	public static void fixPreferencePermissions()
-	{
-		final File f = getPreferenceFile();
-		if(f.exists() && !f.setReadable(true, false))
-			log("Failed to make preferences file readable");
-	}
-
-	public static Intent createAppOpsIntent(String packageName)
-	{
+	public static Intent createAppOpsIntent(String packageName) {
 		final Intent intent = new Intent();
 		intent.setClassName(AppOpsActivity.class.getPackage().getName(),
 				AppOpsActivity.class.getName());
 		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK
 				| Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 
-		if(packageName != null)
-		{
+		if (packageName != null) {
 			final Bundle args = new Bundle();
 			args.putString(AppOpsDetails.ARG_PACKAGE_NAME, packageName);
 			intent.putExtra(PreferenceActivity.EXTRA_SHOW_FRAGMENT_ARGUMENTS, args);
@@ -197,20 +161,12 @@ public final class Util
 		return intent;
 	}
 
-	public static SharedPreferences getSharedPrefs(Context context)
-	{
+	public static SharedPreferences getSharedPrefs(Context context) {
 		return context.getSharedPreferences(context.getPackageName() + "_preferences",
-				Context.MODE_WORLD_READABLE);
+				Context.MODE_PRIVATE);
 	}
 
-	public static void dumpViewHierarchy(View v)
-	{
-		debug("dumpViewHierarchy: ");
-		dumpViewHierarchyInternal(v, 0);
-	}
-
-	public static void applyTheme(Activity activity)
-	{
+	public static void applyTheme(Activity activity) {
 		int themeResId = PreferenceManager.getDefaultSharedPreferences(activity)
 				.getBoolean("light_theme", false)
 				? android.R.style.Theme_DeviceDefault_Light_DarkActionBar
@@ -219,48 +175,38 @@ public final class Util
 		activity.setTheme(themeResId);
 	}
 
-	public static boolean hasAppOpsPermissions(Context context)
-	{
-		for(String perm : Constants.APP_OPS_PERMISSIONS)
-		{
-			if(context.checkCallingOrSelfPermission(perm) != PackageManager.PERMISSION_GRANTED)
+	public static boolean hasAppOpsPermissions(Context context) {
+		for (String perm : Constants.APP_OPS_PERMISSIONS) {
+			if (context.checkCallingOrSelfPermission(perm) != PackageManager.PERMISSION_GRANTED)
 				return false;
 		}
 
 		return true;
 	}
 
-	public static Set<String> getClassList(String apkFile, String packageName, boolean getSubPackages)
-	{
+	public static Set<String> getClassList(String apkFile, String packageName, boolean getSubPackages) {
 		final Enumeration<String> entries;
 		DexFile df = null;
-		try
-		{
+		try {
 			df = new DexFile(apkFile);
 			entries = df.entries();
-		}
-		catch(IOException e)
-		{
+		} catch (IOException e) {
 			debug(e);
 			return null;
-		}
-		finally
-		{
+		} finally {
 			Util.closeQuietly(df);
 		}
 
-		final Set<String> classes = new HashSet<String>();
+		final Set<String> classes = new HashSet<>();
 
-		while(entries.hasMoreElements())
-		{
+		while (entries.hasMoreElements()) {
 			final String entry = entries.nextElement();
 
-			if(packageName != null)
-			{
-				if(!entry.startsWith(packageName))
+			if (packageName != null) {
+				if (!entry.startsWith(packageName))
 					continue;
 
-				if(!getSubPackages && entry.substring(packageName.length() + 1).contains("."))
+				if (!getSubPackages && entry.substring(packageName.length() + 1).contains("."))
 					continue;
 			}
 
@@ -270,162 +216,82 @@ public final class Util
 		return classes;
 	}
 
-	public static Set<String> getClassList(LoadPackageParam lpparam) {
-		return getClassList(lpparam, null, true);
-	}
-
-	public static Set<String> getClassList(LoadPackageParam lpparam, String packageName, boolean getSubPackages)
-	{
-		if(lpparam.appInfo == null)
+	public static Set<String> getClassList(LoadPackageParam lpparam, String packageName, boolean getSubPackages) {
+		if (lpparam.appInfo == null)
 			return null;
 
 		return getClassList(lpparam.appInfo.sourceDir, packageName, getSubPackages);
 	}
 
-	private static void dumpViewHierarchyInternal(View view, int level)
-	{
-		debug(pad(2 * level) + view);
-
-		if(view instanceof ViewGroup)
-		{
-			final ViewGroup vg = (ViewGroup) view;
-			for(int i = 0; i != vg.getChildCount(); ++i)
-				dumpViewHierarchyInternal(vg.getChildAt(i), level + 1);
-		}
-	}
-
-	private static String pad(int length)
-	{
-		final StringBuilder sb = new StringBuilder(length);
-		for(int i = 0; i != length; ++i)
-			sb.append(' ');
-
-		return sb.toString();
-	}
-
-	public static String capitalizeFirst(CharSequence text)
-	{
-		if(text == null)
+	public static String capitalizeFirst(CharSequence text) {
+		if (text == null)
 			return null;
 
-		if(text.length() == 0 || !Character.isLowerCase(text.charAt(0)))
+		if (text.length() == 0 || !Character.isLowerCase(text.charAt(0)))
 			return text.toString();
 
 		return Character.toUpperCase(text.charAt(0)) + text.subSequence(1, text.length()).toString();
 	}
 
-	public static boolean isSystemApp(Context context)
-	{
-		try
-		{
+	private static boolean isSystemApp(Context context) {
+		try {
 			final ApplicationInfo appInfo = context.getPackageManager().getApplicationInfo(context.getPackageName(), 0);
 			return 0 != (appInfo.flags & ApplicationInfo.FLAG_SYSTEM);
-		}
-		catch(NameNotFoundException e)
-		{
+		} catch (NameNotFoundException e) {
 			// shouldn't happen
 		}
 
 		return false;
 	}
 
-	public static boolean runAsSu(String[] commands)
-	{
-		boolean hasOutput = false;
-
-		for(String command : commands)
-		{
-			Util.debug("cmd: " + command);
-			final List<String> out = SU.run(command);
-			if(out != null && !out.isEmpty())
-			{
-				Util.debug("---> " + out.get(0));
-				hasOutput = true;
-				break;
-			}
-		}
-
-		return hasOutput;
-	}
-
-	@TargetApi(19)
-	public static int getOpValue(String opName)
-	{
-		try
-		{
+	@TargetApi(Build.VERSION_CODES.KITKAT)
+	public static int getOpValue(String opName) {
+		try {
 			return AppOpsManager.class.getField(opName).getInt(null);
+		} catch (NoSuchFieldException | IllegalAccessException | IllegalArgumentException e) {
+			return -1;
 		}
-		catch(NoSuchFieldException e)
-		{
-			// ignore
-		}
-		catch(IllegalAccessException e)
-		{
-			// ignore
-		}
-		catch(IllegalArgumentException e)
-		{
-			// ignore
-		}
-
-		return -1;
 	}
 
-	public static void closeQuietly(DexFile df)
-	{
-		try
-		{
-			if(df != null)
+	private static void closeQuietly(DexFile df) {
+		try {
+			if (df != null)
 				df.close();
-		}
-		catch(IOException e)
-		{
+		} catch (IOException e) {
 			// ignore
 		}
 	}
 
-	public static void closeQuietly(Closeable c)
-	{
-		try
-		{
-			if(c != null)
+	public static void closeQuietly(Closeable c) {
+		try {
+			if (c != null)
 				c.close();
-		}
-		catch(IOException e)
-		{
+		} catch (IOException e) {
 			// ignore
 		}
 	}
 
-	public static class StringList
-	{
-		private final List<CharSequence> mList = new ArrayList<CharSequence>();
+	public static class StringList {
+		private final List<CharSequence> mList = new ArrayList<>();
 
-		public void add(String string) {
-			mList.add(string);
-		}
+		public void add(String string) { mList.add(string); }
 
-		public boolean isEmpty() {
-			return mList.isEmpty();
-		}
+		public boolean isEmpty() { return mList.isEmpty(); }
 
 		@Override
-		public String toString()
-		{
+		public String toString() {
+			if (mList.isEmpty()) return "";
+
 			final StringBuilder sb = new StringBuilder();
 
-			for(int i = 0; i != mList.size(); ++i)
-			{
-				if(i != 0)
-					sb.append(", ");
-
-				sb.append(mList.get(i));
+			for (CharSequence str : mList) {
+				sb.append(str).append(", ");
 			}
 
-			return sb.toString();
+			return sb.substring(0, sb.length() - 2);
 		}
-
 	}
 
-	private Util() {}
+	private Util() {
+	}
 }

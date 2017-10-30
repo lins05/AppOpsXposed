@@ -20,15 +20,14 @@ package at.jclehner.appopsxposed;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
-import at.jclehner.appopsxposed.util.Constants;
-import at.jclehner.appopsxposed.util.Util;
 
 import com.android.settings.applications.AppOpsCategory;
 import com.android.settings.applications.AppOpsDetails;
 import com.android.settings.applications.AppOpsSummary;
+
+import at.jclehner.appopsxposed.util.Util;
 
 public class AppOpsActivity extends PreferenceActivity
 {
@@ -70,13 +69,6 @@ public class AppOpsActivity extends PreferenceActivity
 			ab.setPositiveButton(android.R.string.ok, null);
 			ab.show();
 		}
-	}
-
-	@Override
-	protected void onPause()
-	{
-		super.onPause();
-		Util.fixPreferencePermissions();
 	}
 
 	@Override

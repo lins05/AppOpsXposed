@@ -20,7 +20,6 @@ package at.jclehner.appopsxposed;
 
 
 import at.jclehner.appopsxposed.util.Constants;
-import eu.chainfire.libsuperuser.Shell.SU;
 
 import android.Manifest;
 import android.app.Activity;
@@ -31,7 +30,6 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface.OnShowListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
@@ -42,21 +40,14 @@ import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+import android.support.annotation.NonNull;
 import android.support.v13.app.FragmentCompat;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.text.Html;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MenuItem.OnMenuItemClickListener;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
-
-import java.util.Arrays;
 
 import at.jclehner.appopsxposed.util.AppOpsManagerWrapper;
 import at.jclehner.appopsxposed.util.OpsLabelHelper;
@@ -81,68 +72,8 @@ public class SettingsActivity extends Activity
 		}
 	}
 
-	@Override
-	protected void onPause()
-	{
-		super.onPause();
-		Util.fixPreferencePermissions();
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu)
-	{
-		if(Util.isSystemApp(this))
-		{
-			menu.add(R.string.uninstall)
-					.setIcon(android.R.drawable.ic_menu_delete)
-					.setOnMenuItemClickListener(new OnMenuItemClickListener() {
-
-						@Override
-						public boolean onMenuItemClick(MenuItem item)
-						{
-							final AlertDialog.Builder ab = new AlertDialog.Builder(SettingsActivity.this);
-							ab.setMessage(getString(R.string.uninstall) + "? " + getString(R.string.will_reboot));
-							ab.setNegativeButton(android.R.string.cancel, null);
-							ab.setPositiveButton(android.R.string.ok, new OnClickListener() {
-
-								@Override
-								public void onClick(DialogInterface dialog, int which)
-								{
-									if(!SU.available())
-									{
-										Toast.makeText(SettingsActivity.this,
-												R.string.toast_needs_root, Toast.LENGTH_SHORT).show();
-									}
-									else
-									{
-										final String[] commands = {
-												"mount -o remount,rw /system",
-												"rm " + LauncherActivity.SYSTEM_APK,
-												"mount -o remount,ro /system",
-												"sync",
-												"reboot",
-										};
-
-										Toast.makeText(SettingsActivity.this, R.string.will_reboot,
-												Toast.LENGTH_LONG).show();
-										Util.runAsSu(commands);
-									}
-								}
-							});
-
-							ab.show();
-
-							return true;
-						}
-					})
-					.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-		}
-
-		return true;
-	}
-
 	public static class SettingsFragment extends PreferenceFragment implements
-			OnPreferenceChangeListener, OnSharedPreferenceChangeListener,
+			OnPreferenceChangeListener,
 			FragmentCompat.OnRequestPermissionsResultCallback
 	{
 		private SharedPreferences mPrefs;
@@ -152,7 +83,7 @@ public class SettingsActivity extends Activity
 		{
 			super.onCreate(savedInstanceState);
 
-			getPreferenceManager().setSharedPreferencesMode(MODE_WORLD_READABLE);
+			getPreferenceManager().setSharedPreferencesMode(MODE_PRIVATE);
 			mPrefs = Util.getSharedPrefs(getActivity());
 
 			addPreferencesFromResource(R.xml.settings);
@@ -166,12 +97,6 @@ public class SettingsActivity extends Activity
 			v.findViewById(R.id.xposed_settings_warning).setVisibility(
 					Util.isXposedModuleEnabled() ? View.GONE : View.VISIBLE);
 			return v;
-		}
-
-		@Override
-		public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
-		{
-			Util.fixPreferencePermissions();
 		}
 
 		@Override
@@ -237,7 +162,7 @@ public class SettingsActivity extends Activity
 		}
 
 		@Override
-		public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)
+		public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
 		{
 			if(requestCode == REQUEST_CREATE_BACKUP || requestCode == REQUEST_RESTORE_BACKUP)
 			{
@@ -300,7 +225,9 @@ public class SettingsActivity extends Activity
 			p.setTitle("AppOpsXposed " + Util.getAoxVersion(getActivity()));
 			// \u2013 is an en dash!
 			p.setSummary("Copyright (C) Joseph C. Lehner 2013\u20132015\n"
-					+ "<joseph.c.lehner@gmail.com> / caspase @XDA");
+					+ "<joseph.c.lehner@gmail.com> / caspase @XDA\n"
+					+ "Nougat compatibility patches by\n"
+					+ "<xspeedpl@windowslive.com> / Xspeed @XDA");
 
 			if(BuildConfig.DEBUG)
 			{
@@ -318,18 +245,6 @@ public class SettingsActivity extends Activity
 
 				p.setEnabled(true);
 			}
-
-			p = findPreference("build_bugreport");
-			p.setOnPreferenceClickListener(new OnPreferenceClickListener()
-			{
-
-				@Override
-				public boolean onPreferenceClick(Preference preference)
-				{
-					BugReportBuilder.buildAndSend(getActivity());
-					return true;
-				}
-			});
 
 			String[] keys = { "icon_appinfo", "icon_settings" };
 			for(String key : keys)
@@ -363,9 +278,6 @@ public class SettingsActivity extends Activity
 					}
 				});
 			}
-
-			p = findPreference("backup_file");
-			p.setSummary(Html.fromHtml("<tt><small>" + Backup.getFile(getActivity()) + "</small></tt>"));
 
 			p = findPreference("light_theme");
 			p.setOnPreferenceChangeListener(new OnPreferenceChangeListener()
@@ -432,7 +344,7 @@ public class SettingsActivity extends Activity
 			});
 
 			final AlertDialog dialog = ab.create();
-			dialog.setMessage(Html.fromHtml(getString(R.string.hacks_dialog_message)));
+			dialog.setMessage(Util.fromHtml(getString(R.string.hacks_dialog_message)));
 			dialog.setOnShowListener(new OnShowListener() {
 
 				@Override

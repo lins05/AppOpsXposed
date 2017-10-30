@@ -61,12 +61,6 @@ public class AppOpsCategory extends ListFragment implements
     public AppOpsCategory() {
     }
 
-    public AppOpsCategory(AppOpsState.OpsTemplate template) {
-        Bundle args = new Bundle();
-        args.putParcelable("template", template);
-        setArguments(args);
-    }
-
     /**
      * Helper for determining if the configuration has changed in an interesting
      * way so we need to rebuild the app list.

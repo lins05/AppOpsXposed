@@ -68,7 +68,11 @@ public class AppOpsSummary extends Fragment {
 
         @Override
         public Fragment getItem(int position) {
-            return new AppOpsCategory(sPageTemplates[position]);
+            Fragment f = new AppOpsCategory();
+            Bundle args = new Bundle();
+            args.putParcelable("template", sPageTemplates[position]);
+            f.setArguments(args);
+            return f;
         }
 
         @Override

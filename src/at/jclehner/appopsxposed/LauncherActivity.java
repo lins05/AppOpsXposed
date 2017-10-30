@@ -17,46 +17,22 @@
  */
 
 package at.jclehner.appopsxposed;
-
-import java.io.File;
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.DialogFragment;
-import android.app.TaskStackBuilder;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.PersistableBundle;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.View;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.TextView;
-import android.widget.Toast;
 import at.jclehner.appopsxposed.util.Util;
-import eu.chainfire.libsuperuser.Shell.SU;
 
 public class LauncherActivity extends Activity
 {
 	public static class HtcActivity2 extends Activity
 	{
 	}
-
-	public static final String SYSTEM_APK = "/system/" +
-			(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ?
-					"priv-app" : "app") + "/AppOpsXposed.apk";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
