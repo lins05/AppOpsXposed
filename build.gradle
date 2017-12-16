@@ -1,6 +1,8 @@
 buildscript {
     repositories {
+        google() 
         mavenCentral()
+        jcenter()
     }
 
     dependencies {
@@ -11,21 +13,25 @@ buildscript {
 apply plugin: 'com.android.application'
 
 repositories {
+        google()
     mavenCentral()
+        jcenter()
 }
 
 dependencies {
 	compile 'com.android.support:support-v13:25.3.1'
+        compile 'eu.chainfire:libsuperuser:1.0.0.201602011018'
+
 	provided files('lib/XposedBridgeApi.jar')
 }
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 25
     buildToolsVersion '27.0.0'
 
 	defaultConfig {
 		minSdkVersion 18
-		targetSdkVersion 26
+		targetSdkVersion 25
 
 		versionCode 13004
 		versionName '1.30.4 (mod)'
